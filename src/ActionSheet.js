@@ -8,9 +8,12 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
+  TouchableHighlight,
+  TouchableWithoutFeedback,
   Animated,
 } from 'react-native';
+
+const kItemViewHeight = 55.0;
 
 export default class ActionSheet extends Component {
 
@@ -19,9 +22,20 @@ export default class ActionSheet extends Component {
     this.contentLayoutSetted = false;
     this.contentLayout = { height: 0.0 };
     this.maskAlpha = new Animated.Value(0.0);
-    this.marginBottom = new Animated.Value(0.0);
+    this.translateY = new Animated.Value(this.contentHeight());
     this.state = {
       show: false,
+    }
+  }
+
+  contentHeight() {
+    return (this.props.buttonTitles.length + 1) * kItemViewHeight
+  }
+
+  componentWillReceiveProps(nextProps) {
+    super.componentWillReceiveProps(nextProps);
+    if (this.state.show === false) {
+      this.translateY.setValue(this.contentHeight());
     }
   }
 
@@ -30,8 +44,15 @@ export default class ActionSheet extends Component {
       show: true,
     }, () => {
       Animated.timing(this.maskAlpha, { toValue: 1.0, duration: 250 }).start();
-      Animated.timing(this.marginBottom, { toValue: 0.0, duration: 250 }).start();
+      Animated.spring(this.translateY, { bounciness: 1.0, speed: 40.0, toValue: 0.0 }).start();
     });
+  }
+
+  dismiss() {
+    Animated.timing(this.maskAlpha, { toValue: 0.0, duration: 250 }).start(() => {
+      this.setState({ show: false });
+    });
+    Animated.spring(this.translateY, { bounciness: 1.0, speed: 40.0, toValue: this.contentHeight() }).start();
   }
 
   onLayout(layout) {
@@ -46,19 +67,23 @@ export default class ActionSheet extends Component {
     if (this.props.buttonTitles instanceof Array) {
       items = this.props.buttonTitles.map((element, idx) => {
         return (
-          <TouchableOpacity key={"i" + idx} style={styles.itemView}>
-            <Text style={styles.itemTitle}>{element}</Text>
-          </TouchableOpacity>
+          <TouchableHighlight underlayColor="#f2f2f2" onPress={() => { this.dismiss(); this.props.onSelected(idx); }} key={"i" + idx} style={styles.itemView}>
+            <Text style={idx === this.props.dangerIndex ? styles.itemDangerTitle : styles.itemTitle}>{element}</Text>
+          </TouchableHighlight>
         )
       });
     }
     return (
       <Modal animationType="none" transparent={true} visible={this.state.show}>
-        <Animated.View style={[styles.maskView, { opacity: this.maskAlpha }]}></Animated.View>
+        <Animated.View style={[styles.maskView, { opacity: this.maskAlpha }]} pointerEvents="none" />
         <View style={styles.container}>
-          <Animated.View onLayout={(layout) => { this.onLayout(layout) } }
-            style={[styles.contentView, { marginBottom: this.marginBottom }]}>
+          <TouchableWithoutFeedback onPress={() => { this.dismiss(); if (this.onCancelled instanceof Function) { this.onCancelled() } }}><View style={{flex: 1}} /></TouchableWithoutFeedback>
+          <Animated.View onLayout={(layout) => { this.onLayout(layout) }}
+            style={[styles.contentView, { transform: [{ translateY: this.translateY }] }]}>
             {items}
+            <TouchableHighlight underlayColor="#f2f2f2" onPress={() => { this.dismiss(); if (this.onCancelled instanceof Function) { this.onCancelled() } }} style={styles.cancelView}>
+              <Text style={styles.cancelTitle}>{this.props.cancelTitle}</Text>
+            </TouchableHighlight>
           </Animated.View>
         </View>
       </Modal>
@@ -66,6 +91,19 @@ export default class ActionSheet extends Component {
   }
 
 }
+
+ActionSheet.propTypes = {
+  buttonTitles: React.PropTypes.array.isRequired,
+  cancelTitle: React.PropTypes.string,
+  dangerIndex: React.PropTypes.number,
+  onSelected: React.PropTypes.func.isRequired,
+  onCancelled: React.PropTypes.func,
+};
+
+ActionSheet.defaultProps = {
+  cancelTitle: "取消",
+  dangerIndex: -1,
+};
 
 let styles = StyleSheet.create({
   container: {
@@ -77,21 +115,39 @@ let styles = StyleSheet.create({
     position: "absolute",
     width: "100%",
     height: "100%",
-    backgroundColor: "#00000080",
+    backgroundColor: "#00000050",
   },
   contentView: {
     width: "100%",
     backgroundColor: "white",
   },
   itemView: {
-    height: 50.0,
+    height: kItemViewHeight,
     alignItems: "center",
     justifyContent: "center",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "black",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#dcdcdc",
+    backgroundColor: "white",
   },
   itemTitle: {
     fontSize: 16,
-    fontWeight: "500",
-  }
+    fontWeight: "400",
+    color: "#333333",
+  },
+  itemDangerTitle: {
+    fontSize: 16,
+    fontWeight: "400",
+    color: "#e04d2c",
+  },
+  cancelView: {
+    height: kItemViewHeight,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f8f8f8",
+  },
+  cancelTitle: {
+    fontSize: 16,
+    fontWeight: "400",
+    color: "#999999",
+  },
 })

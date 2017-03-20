@@ -29,7 +29,7 @@ export default class react_native_crossui extends Component {
         }}>
           <Text>ActionSheet</Text>
         </TouchableOpacity>
-        <ActionSheet ref="actionSheet" buttonTitles={["Test", "Hello"]} />
+        <ActionSheet ref="actionSheet" buttonTitles={["推荐给朋友", "举报内容", "不再关注"]} dangerIndex={2} onSelected={(idx) => {console.log(idx)}} />
       </View>
     );
   }
