@@ -50,9 +50,10 @@ export default class ActionSheet extends Component {
 
   dismiss(cb) {
     Animated.timing(this.maskAlpha, { toValue: 0.0, duration: 250 }).start(() => {
-      this.setState({ show: false }, () => {
+      this.setState({ show: false });
+      setTimeout(() => {
         cb.call();
-      });
+      }, 250)
     });
     Animated.spring(this.translateY, { bounciness: 1.0, speed: 40.0, toValue: this.contentHeight() }).start();
   }
@@ -69,7 +70,7 @@ export default class ActionSheet extends Component {
     if (this.props.buttonTitles instanceof Array) {
       items = this.props.buttonTitles.map((element, idx) => {
         return (
-          <TouchableHighlight underlayColor="#f2f2f2" onPress={() => { this.dismiss(() => {this.props.onSelected(idx);}); }} key={"i" + idx} style={styles.itemView}>
+          <TouchableHighlight underlayColor="#f2f2f2" onPress={() => { this.dismiss(() => { this.props.onSelected(idx); }); }} key={"i" + idx} style={styles.itemView}>
             <Text style={idx === this.props.dangerIndex ? styles.itemDangerTitle : styles.itemTitle}>{element}</Text>
           </TouchableHighlight>
         )
@@ -79,11 +80,11 @@ export default class ActionSheet extends Component {
       <Modal animationType="none" transparent={true} visible={this.state.show}>
         <Animated.View style={[styles.maskView, { opacity: this.maskAlpha }]} pointerEvents="none" />
         <View style={styles.container}>
-          <TouchableWithoutFeedback onPress={() => { this.dismiss(() => {if (this.onCancelled instanceof Function) { this.onCancelled() }}) }}><View style={{flex: 1}} /></TouchableWithoutFeedback>
+          <TouchableWithoutFeedback onPress={() => { this.dismiss(() => { if (this.onCancelled instanceof Function) { this.onCancelled() } }) }}><View style={{ flex: 1 }} /></TouchableWithoutFeedback>
           <Animated.View onLayout={(layout) => { this.onLayout(layout) }}
             style={[styles.contentView, { transform: [{ translateY: this.translateY }] }]}>
             {items}
-            <TouchableHighlight underlayColor="#f2f2f2" onPress={() => { this.dismiss(() => {if (this.onCancelled instanceof Function) { this.onCancelled() }}); }} style={styles.cancelView}>
+            <TouchableHighlight underlayColor="#f2f2f2" onPress={() => { this.dismiss(() => { if (this.onCancelled instanceof Function) { this.onCancelled() } }); }} style={styles.cancelView}>
               <Text style={styles.cancelTitle}>{this.props.cancelTitle}</Text>
             </TouchableHighlight>
           </Animated.View>
