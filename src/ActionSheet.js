@@ -33,7 +33,6 @@ export default class ActionSheet extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    super.componentWillReceiveProps(nextProps);
     if (this.state.show === false) {
       this.translateY.setValue(this.contentHeight());
     }
